@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 
 interface AIInsightsProps {
   analysisData: any;
@@ -10,17 +11,19 @@ interface Insight {
   type: 'info' | 'warning' | 'success';
 }
 
+const PREDEFINED_QUESTIONS = [
+  'Explain the network coverage quality',
+  'What can be improved?',
+  'Compare with typical values',
+  'Suggest optimization strategies',
+  'What are the peak usage hours?',
+  'How does weather affect the signal?'
+];
+
 export default function AIInsights({ analysisData }: AIInsightsProps) {
   const [loading, setLoading] = useState(false);
   const [insights, setInsights] = useState<Insight[]>([]);
   const [customQuestion, setCustomQuestion] = useState('');
-
-  const predefinedQuestions = [
-    'Explain the network coverage quality',
-    'What can be improved?',
-    'Compare with typical values',
-    'Suggest optimization strategies'
-  ];
 
   const getInsight = async (question: string) => {
     setLoading(true);
@@ -65,19 +68,53 @@ export default function AIInsights({ analysisData }: AIInsightsProps) {
       <div className="bg-white rounded-lg p-6 shadow-sm">
         <h2 className="text-xl font-semibold mb-4 text-gray-800">AI Insights</h2>
         
-        {/* Predefined Questions */}
-        <div className="grid grid-cols-2 gap-3 mb-6">
-          {predefinedQuestions.map((question, index) => (
-            <button
+        {/* Insights Display */}
+        <div className="space-y-4 mb-6">
+          {insights.map((insight, index) => (
+            <div
               key={index}
-              onClick={() => getInsight(question)}
-              disabled={loading}
-              className="p-3 text-left bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+              className="p-4 bg-white border border-gray-200 rounded-lg"
             >
-              <span className="text-indigo-600 font-medium">{question}</span>
-            </button>
+              <h3 className="font-medium text-gray-800 mb-2">{insight.title}</h3>
+              <div className="prose prose-sm max-w-none text-gray-600">
+                <ReactMarkdown>{insight.content}</ReactMarkdown>
+              </div>
+              
+              {/* Show available options after each response */}
+              <div className="mt-4 pt-4 border-t border-gray-100">
+                <p className="text-sm text-gray-500 mb-2">Ask another question:</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {PREDEFINED_QUESTIONS.filter(q => q !== insight.title).map((question, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => getInsight(question)}
+                      disabled={loading}
+                      className="p-2 text-left text-sm bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+                    >
+                      <span className="text-indigo-600 font-medium">{question}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
           ))}
         </div>
+
+        {/* Initial Predefined Questions (shown only if no insights yet) */}
+        {insights.length === 0 && (
+          <div className="grid grid-cols-2 gap-3 mb-6">
+            {PREDEFINED_QUESTIONS.map((question, index) => (
+              <button
+                key={index}
+                onClick={() => getInsight(question)}
+                disabled={loading}
+                className="p-3 text-left bg-indigo-50 hover:bg-indigo-100 rounded-lg transition-colors"
+              >
+                <span className="text-indigo-600 font-medium">{question}</span>
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* Custom Question Form */}
         <form onSubmit={handleCustomQuestion} className="mb-6">
@@ -107,19 +144,6 @@ export default function AIInsights({ analysisData }: AIInsightsProps) {
             <span className="ml-2 text-gray-600">Analyzing...</span>
           </div>
         )}
-
-        {/* Insights Display */}
-        <div className="space-y-4">
-          {insights.map((insight, index) => (
-            <div
-              key={index}
-              className="p-4 bg-white border border-gray-200 rounded-lg"
-            >
-              <h3 className="font-medium text-gray-800 mb-2">{insight.title}</h3>
-              <p className="text-gray-600 whitespace-pre-wrap">{insight.content}</p>
-            </div>
-          ))}
-        </div>
       </div>
     </div>
   );
