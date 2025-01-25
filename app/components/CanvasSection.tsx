@@ -89,6 +89,11 @@ export default function CanvasSection() {
     ]
   }
 
+  // Convert signal strength to number for comparison
+  const signalStrength = Number(analysisData.towerData.signalStrength)
+  const networkStatus = signalStrength > -85 ? 'Good' : 'Poor'
+  const statusColor = signalStrength > -85 ? 'text-green-500' : 'text-yellow-500'
+
   return (
     <div className="p-6 space-y-6">
       <div className="bg-white rounded-lg p-6 shadow-sm">
@@ -124,8 +129,8 @@ export default function CanvasSection() {
         </div>
         <div className="bg-white rounded-lg p-6 shadow-sm">
           <h3 className="text-lg font-medium text-gray-800">Network Status</h3>
-          <p className="text-3xl font-bold text-green-500">
-            {analysisData?.towerData.signalStrength > -85 ? 'Good' : 'Poor'}
+          <p className={`text-3xl font-bold ${statusColor}`}>
+            {networkStatus}
           </p>
         </div>
       </div>
