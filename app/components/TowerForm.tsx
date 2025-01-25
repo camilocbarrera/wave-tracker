@@ -21,6 +21,7 @@ export default function TowerForm({ onAnalysis, defaultValues }: TowerFormProps)
     lac: defaultValues?.lac || ''
   })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target
@@ -33,29 +34,27 @@ export default function TowerForm({ onAnalysis, defaultValues }: TowerFormProps)
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError(null)
+
     try {
-      // Mock API call
-      const mockResponse = {
-        towerData: {
-          latitude: '40.7128',
-          longitude: '-74.0060',
-          range: '2000',
-          signalStrength: '-85'
+      const response = await fetch('/api/tower-data', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
         },
-        speedPrediction: 25,
-        suggestions: [
-          'Consider moving closer to the window for better signal',
-          'The network congestion is typically lower during off-peak hours',
-          'Your device supports 5G - switching to 5G could improve speeds'
-        ]
+        body: JSON.stringify(formData),
+      })
+
+      const result = await response.json()
+
+      if (!result.success) {
+        throw new Error(result.error || 'Failed to analyze network')
       }
 
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-
-      onAnalysis?.(mockResponse)
+      onAnalysis?.(result.data)
     } catch (error) {
-      console.error('Error:', error)
+      console.error('Analysis error:', error)
+      setError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
       setLoading(false)
     }
@@ -121,6 +120,13 @@ export default function TowerForm({ onAnalysis, defaultValues }: TowerFormProps)
           />
         </div>
       </div>
+      
+      {error && (
+        <div className="text-red-500 text-sm mt-2">
+          {error}
+        </div>
+      )}
+      
       <button
         type="submit"
         disabled={loading}
