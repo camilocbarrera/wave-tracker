@@ -1,7 +1,7 @@
 'use client'
 
 import { createContext, useContext, useState } from 'react'
-import type { AnalysisResult } from '../types'
+import { AnalysisResult } from '@/lib/types'
 
 interface AnalysisContextType {
   analysisData: AnalysisResult | null
