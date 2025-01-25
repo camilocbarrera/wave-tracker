@@ -10,12 +10,12 @@ export default function Home() {
           {/* Left side - Chat */}
           <div className="w-1/3 border-r border-gray-200 bg-white">
             <ChatSection />
-          </div>
-          
+            </div>
+
           {/* Right side - Canvas */}
           <div className="w-2/3 bg-gray-50 overflow-auto">
             <CanvasSection />
-          </div>
+            </div>
         </div>
       </main>
     </AnalysisProvider>
