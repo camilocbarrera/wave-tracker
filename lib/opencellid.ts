@@ -80,22 +80,42 @@ export async function getCellsInArea({
   if (lac) params.append('lac', lac.toString());
   if (radio) params.append('radio', radio);
 
+  const url = `https://opencellid.org/cell/getInArea?${params.toString()}`;
+  console.log('[OpenCellID] Requesting cells in area:', {
+    url,
+    bbox,
+    mcc,
+    mnc,
+    lac,
+    radio,
+    limit,
+    offset
+  });
+
   try {
-    const response = await fetch(
-      `https://opencellid.org/cell/getInArea?${params.toString()}`
-    );
+    const response = await fetch(url);
 
     if (!response.ok) {
+      console.error('[OpenCellID] API error:', {
+        status: response.status,
+        statusText: response.statusText
+      });
       throw new Error(`OpenCellID API error: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log('[OpenCellID] Response:', {
+      cellsCount: data.cells?.length || 0,
+      firstCell: data.cells?.[0],
+      bbox
+    });
+
     return {
       cells: data.cells || [],
       count: data.cells?.length || 0
     };
   } catch (error) {
-    console.error('Error fetching cells:', error);
+    console.error('[OpenCellID] Error fetching cells:', error);
     throw new Error('Failed to fetch cells: ' + (error instanceof Error ? error.message : 'Unknown error'));
   }
 }
@@ -107,11 +127,20 @@ export async function getCellStats({
   lac,
   radio
 }: AreaCellsParams): Promise<CellStats> {
+  console.log('[OpenCellID] Getting cell stats:', {
+    bbox,
+    mcc,
+    mnc,
+    lac,
+    radio
+  });
+
   try {
     const { count } = await getCellsInArea({ bbox, mcc, mnc, lac, radio, limit: 1000 });
+    console.log('[OpenCellID] Cell stats response:', { count });
     return { count };
   } catch (error) {
-    console.error('Error getting cell stats:', error);
+    console.error('[OpenCellID] Error getting cell stats:', error);
     throw error;
   }
 } 
