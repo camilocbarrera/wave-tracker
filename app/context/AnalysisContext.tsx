@@ -1,16 +1,17 @@
 'use client'
 
 import { createContext, useContext, useState } from 'react'
+import type { AnalysisResult } from '../types'
 
 interface AnalysisContextType {
-  analysisData: any
-  setAnalysisData: (data: any) => void
+  analysisData: AnalysisResult | null
+  setAnalysisData: (data: AnalysisResult | null) => void
 }
 
 const AnalysisContext = createContext<AnalysisContextType | undefined>(undefined)
 
 export function AnalysisProvider({ children }: { children: React.ReactNode }) {
-  const [analysisData, setAnalysisData] = useState(null)
+  const [analysisData, setAnalysisData] = useState<AnalysisResult | null>(null)
 
   return (
     <AnalysisContext.Provider value={{ analysisData, setAnalysisData }}>
