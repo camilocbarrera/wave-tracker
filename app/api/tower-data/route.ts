@@ -9,7 +9,7 @@ export async function POST(request: Request) {
     const towerData = await fetchTowerData({ mcc, mnc, cellId, lac })
 
     return NextResponse.json({ success: true, data: towerData })
-  } catch (error) {
+  } catch {
     return NextResponse.json(
       { success: false, error: 'Failed to fetch tower data' },
       { status: 500 }
