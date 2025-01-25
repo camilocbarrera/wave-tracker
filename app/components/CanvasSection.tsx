@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { Line } from 'react-chartjs-2'
 import { useAnalysis } from '../context/AnalysisContext'
+import AIInsights from './AIInsights'
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -37,13 +38,27 @@ export default function CanvasSection() {
 
   useEffect(() => {
     if (analysisData) {
-      // Generate time-series data based on the analysis
-      const newStats = Array.from({ length: 24 }, (_, i) => ({
-        speed: analysisData.speedPrediction + (Math.random() * 10 - 5), // Vary around the predicted speed
-        latency: Number(analysisData.towerData.signalStrength) * -1 + (Math.random() * 20 - 10), // Convert signal to latency
-        timestamp: `${i}:00`
-      }))
-      setStats(newStats)
+      // Check if it's single tower analysis or area analysis
+      if (analysisData.towerData) {
+        // Single tower analysis
+        const newStats = Array.from({ length: 24 }, (_, i) => ({
+          speed: analysisData.speedPrediction + (Math.random() * 10 - 5),
+          latency: Number(analysisData.towerData.signalStrength) * -1 + (Math.random() * 20 - 10),
+          timestamp: `${i}:00`
+        }))
+        setStats(newStats)
+      } else if (analysisData.cells) {
+        // Area analysis
+        const avgSignalStrength = analysisData.cells.reduce((sum, cell) => 
+          sum + (Number(cell.signalStrength) || -95), 0) / analysisData.cells.length;
+        
+        const newStats = Array.from({ length: 24 }, (_, i) => ({
+          speed: (analysisData.coverageMetrics.cellDensity * 5) + (Math.random() * 10 - 5),
+          latency: avgSignalStrength * -1 + (Math.random() * 20 - 10),
+          timestamp: `${i}:00`
+        }))
+        setStats(newStats)
+      }
     }
   }, [analysisData])
 
@@ -89,10 +104,28 @@ export default function CanvasSection() {
     ]
   }
 
-  // Convert signal strength to number for comparison
-  const signalStrength = Number(analysisData.towerData.signalStrength)
-  const networkStatus = signalStrength > -85 ? 'Good' : 'Poor'
-  const statusColor = signalStrength > -85 ? 'text-green-500' : 'text-yellow-500'
+  // Calculate network status based on analysis type
+  let networkStatus = 'Unknown';
+  let statusColor = 'text-gray-500';
+  let avgSpeed = 0;
+  let avgLatency = 0;
+
+  if (analysisData.towerData) {
+    // Single tower analysis
+    const signalStrength = Number(analysisData.towerData.signalStrength);
+    networkStatus = signalStrength > -85 ? 'Good' : 'Poor';
+    statusColor = signalStrength > -85 ? 'text-green-500' : 'text-yellow-500';
+    avgSpeed = analysisData.speedPrediction;
+    avgLatency = Math.abs(signalStrength);
+  } else if (analysisData.cells) {
+    // Area analysis
+    const avgSignalStrength = analysisData.cells.reduce((sum, cell) => 
+      sum + (Number(cell.signalStrength) || -95), 0) / analysisData.cells.length;
+    networkStatus = avgSignalStrength > -85 ? 'Good' : 'Poor';
+    statusColor = avgSignalStrength > -85 ? 'text-green-500' : 'text-yellow-500';
+    avgSpeed = analysisData.coverageMetrics.cellDensity * 5;
+    avgLatency = Math.abs(avgSignalStrength);
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -118,13 +151,13 @@ export default function CanvasSection() {
         <div className="bg-white rounded-lg p-6 shadow-sm">
           <h3 className="text-lg font-medium text-gray-800">Average Speed</h3>
           <p className="text-3xl font-bold text-blue-500">
-            {stats.length ? (stats.reduce((acc, stat) => acc + stat.speed, 0) / stats.length).toFixed(1) : 0} Mbps
+            {avgSpeed.toFixed(1)} Mbps
           </p>
         </div>
         <div className="bg-white rounded-lg p-6 shadow-sm">
           <h3 className="text-lg font-medium text-gray-800">Average Latency</h3>
           <p className="text-3xl font-bold text-rose-500">
-            {stats.length ? (stats.reduce((acc, stat) => acc + stat.latency, 0) / stats.length).toFixed(0) : 0} ms
+            {avgLatency.toFixed(0)} ms
           </p>
         </div>
         <div className="bg-white rounded-lg p-6 shadow-sm">
@@ -134,6 +167,83 @@ export default function CanvasSection() {
           </p>
         </div>
       </div>
+
+      {/* Additional Network Details */}
+      {analysisData.towerData ? (
+        <div className="bg-white rounded-lg p-6 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">Tower Details</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-600">Location</h3>
+              <p className="text-lg text-gray-800">
+                {analysisData.towerData.latitude}, {analysisData.towerData.longitude}
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600">Range</h3>
+              <p className="text-lg text-gray-800">
+                {(Number(analysisData.towerData.range)/1000).toFixed(2)} km
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600">Signal Strength</h3>
+              <p className="text-lg text-gray-800">
+                {analysisData.towerData.signalStrength} dBm
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600">Estimated Speed</h3>
+              <p className="text-lg text-gray-800">
+                {analysisData.speedPrediction} Mbps
+              </p>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div className="bg-white rounded-lg p-6 shadow-sm">
+          <h2 className="text-xl font-semibold mb-4 text-gray-800">Area Coverage Details</h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+              <h3 className="text-sm font-medium text-gray-600">Total Cells</h3>
+              <p className="text-lg text-gray-800">{analysisData.cells.length}</p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600">Area Size</h3>
+              <p className="text-lg text-gray-800">
+                {analysisData.coverageMetrics.areaSizeKm.toFixed(2)} km²
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600">Cell Density</h3>
+              <p className="text-lg text-gray-800">
+                {analysisData.coverageMetrics.cellDensity.toFixed(2)} cells/km²
+              </p>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-600">Avg Tower Range</h3>
+              <p className="text-lg text-gray-800">
+                {analysisData.coverageMetrics.averageRangeKm.toFixed(2)} km
+              </p>
+            </div>
+          </div>
+
+          {/* Network Types Distribution */}
+          <div className="mt-6">
+            <h3 className="text-lg font-medium mb-3 text-gray-800">Network Types Distribution</h3>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              {Object.entries(analysisData.networkTypes).map(([type, count]) => (
+                <div key={type} className="bg-gray-50 p-3 rounded-lg">
+                  <h4 className="text-sm font-medium text-gray-600">{type}</h4>
+                  <p className="text-lg font-semibold text-gray-800">{count} towers</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* AI Insights Section */}
+      <AIInsights analysisData={analysisData} />
     </div>
   )
 } 
