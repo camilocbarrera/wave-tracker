@@ -1,9 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import type { AnalysisResult } from '../types'
 
 interface TowerFormProps {
-  onAnalysis?: (data: any) => void
+  onAnalysis?: (data: AnalysisResult) => void
   defaultValues?: {
     mcc: string
     mnc: string
