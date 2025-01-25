@@ -1,0 +1,135 @@
+import { useState } from 'react'
+import dynamic from 'next/dynamic'
+
+// Dynamically import MapLibre GL JS to avoid SSR issues
+const Map = dynamic(() => import('./Map'), {
+  ssr: false
+})
+
+interface AreaAnalysisProps {
+  onAnalysisComplete?: (data: any) => void
+}
+
+interface CoverageMetrics {
+  areaSizeKm: number
+  cellDensity: number
+  averageRangeKm: number
+}
+
+interface NetworkTypes {
+  [key: string]: number
+}
+
+export default function AreaAnalysis({ onAnalysisComplete }: AreaAnalysisProps) {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleAreaSelect = async (bounds: {
+    latMin: number
+    lonMin: number
+    latMax: number
+    lonMax: number
+  }) => {
+    setLoading(true)
+    setError(null)
+
+    try {
+      // Get cells in area
+      const cellsResponse = await fetch('/api/cells-in-area', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ bbox: bounds })
+      })
+
+      if (!cellsResponse.ok) {
+        const errorData = await cellsResponse.json();
+        throw new Error(errorData.error || 'Failed to fetch cells');
+      }
+
+      const { cells, count } = await cellsResponse.json();
+
+      // Calculate area metrics
+      const areaSizeKm = calculateAreaSize(bounds)
+      const cellDensity = cells.length / areaSizeKm
+      const averageRangeKm = calculateAverageRange(cells)
+      const networkTypes = calculateNetworkTypes(cells)
+
+      const analysisData = {
+        cells,
+        stats: { count },
+        coverageMetrics: {
+          areaSizeKm,
+          cellDensity,
+          averageRangeKm
+        },
+        networkTypes
+      }
+
+      onAnalysisComplete?.(analysisData)
+    } catch (err) {
+      console.error('Area analysis error:', err);
+      setError(err instanceof Error ? err.message : 'Failed to analyze area')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="bg-white rounded-lg p-4">
+        <h3 className="text-lg font-medium mb-2">Area Analysis</h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Draw a box on the map to select an area for analysis
+        </p>
+        
+        {/* Map Component */}
+        <div className="h-96 rounded-lg overflow-hidden border border-gray-200">
+          <Map onAreaSelect={handleAreaSelect} />
+        </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div className="flex items-center justify-center py-4">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500"></div>
+            <span className="ml-2 text-gray-600">Analyzing area...</span>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && (
+          <div className="mt-4 p-4 bg-red-50 text-red-600 rounded-lg">
+            {error}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// Helper functions
+function calculateAreaSize(bounds: { latMin: number; lonMin: number; latMax: number; lonMax: number }): number {
+  const R = 6371 // Earth's radius in km
+  const dLat = (bounds.latMax - bounds.latMin) * Math.PI / 180
+  const dLon = (bounds.lonMax - bounds.lonMin) * Math.PI / 180
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+    Math.cos(bounds.latMin * Math.PI / 180) * Math.cos(bounds.latMax * Math.PI / 180) *
+    Math.sin(dLon/2) * Math.sin(dLon/2)
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+  return R * c
+}
+
+function calculateAverageRange(cells: any[]): number {
+  if (!cells.length) return 0
+  const totalRange = cells.reduce((sum, cell) => sum + Number(cell.range), 0)
+  return totalRange / cells.length / 1000 // Convert to km
+}
+
+function calculateNetworkTypes(cells: any[]): NetworkTypes {
+  return cells.reduce((acc: NetworkTypes, cell) => {
+    const type = cell.radio || 'Unknown'
+    acc[type] = (acc[type] || 0) + 1
+    return acc
+  }, {})
+} 
