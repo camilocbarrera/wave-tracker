@@ -3,7 +3,7 @@
 import { useState } from 'react'
 import TowerForm from './TowerForm'
 import { useAnalysis } from '../context/AnalysisContext'
-import type { AnalysisResult } from '../types'
+import type { AnalysisResult } from '@/lib/types'
 import AreaAnalysis from './AreaAnalysis'
 
 interface ChatMessage {
@@ -43,6 +43,7 @@ export default function ChatSection() {
     timestamp: new Date(),
     showOptions: true
   }]);
+  const [loading, setLoading] = useState(false)
 
   const handleOptionSelect = (option: 'tower' | 'area' | 'comparison') => {
     // Add user selection to chat
@@ -64,7 +65,7 @@ export default function ChatSection() {
 
   const handleAnalysis = (data: AnalysisResult) => {
     setAnalysisData(data)
-    const signalStrength = Number(data.towerData.signalStrength)
+    const signalStrength = Number(data.towerData?.signalStrength || -95)
     const signalQuality = signalStrength > -85 ? 'Good' : 'Poor'
 
     setMessages(prev => [
@@ -76,10 +77,10 @@ export default function ChatSection() {
       },
       {
         content: `📊 Key Findings:\n
-• Signal Strength: ${data.towerData.signalStrength}dBm (${signalQuality})
+• Signal Strength: ${data.towerData?.signalStrength}dBm (${signalQuality})
 • Estimated Speed: ${data.speedPrediction} Mbps
-• Tower Distance: ${(Number(data.towerData.range)/1000).toFixed(1)}km\n
-💡 Recommendations:\n${data.suggestions.join('\n')}`,
+• Tower Distance: ${(Number(data.towerData?.range)/1000).toFixed(1)}km\n
+${data.suggestions?.length ? `💡 Recommendations:\n${data.suggestions.join('\n')}` : ''}`,
         type: 'assistant',
         timestamp: new Date(),
         showOptions: true
