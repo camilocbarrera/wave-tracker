@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import maplibregl from 'maplibre-gl'
 import 'maplibre-gl/dist/maplibre-gl.css'
 
@@ -11,9 +11,17 @@ interface MapProps {
   }) => void
 }
 
+function calculateAreaSize(bounds: maplibregl.LngLatBounds): number {
+  const width = Math.abs(bounds.getEast() - bounds.getWest()) * 
+    111320 * Math.cos((bounds.getNorth() + bounds.getSouth()) * Math.PI / 360)
+  const height = Math.abs(bounds.getNorth() - bounds.getSouth()) * 110574
+  return width * height
+}
+
 export default function Map({ onAreaSelect }: MapProps) {
   const mapContainer = useRef<HTMLDivElement>(null)
   const map = useRef<maplibregl.Map | null>(null)
+  const [areaWarning, setAreaWarning] = useState<string | null>(null)
 
   useEffect(() => {
     if (!mapContainer.current) return
@@ -35,7 +43,14 @@ export default function Map({ onAreaSelect }: MapProps) {
     // Handle area selection
     map.current.on('boxzoomend', (e) => {
       const bounds = e.target.getBounds()
+      const areaSize = calculateAreaSize(bounds)
       
+      if (areaSize > 4_000_000) {
+        setAreaWarning(`Selected area is too large (${(areaSize/1_000_000).toFixed(2)} km²). Maximum allowed is 4 km².`)
+        return
+      }
+      
+      setAreaWarning(null)
       onAreaSelect({
         latMin: bounds.getSouth(),
         lonMin: bounds.getWest(),
@@ -47,7 +62,7 @@ export default function Map({ onAreaSelect }: MapProps) {
     // Add instructions overlay
     const instructionsDiv = document.createElement('div')
     instructionsDiv.className = 'instructions'
-    instructionsDiv.innerHTML = 'Hold Shift + Click & Drag to select an area'
+    instructionsDiv.innerHTML = 'Hold Shift + Click & Drag to select an area (max 4 km²)'
     mapContainer.current.appendChild(instructionsDiv)
 
     return () => {
@@ -57,7 +72,13 @@ export default function Map({ onAreaSelect }: MapProps) {
 
   return (
     <>
-      <div ref={mapContainer} className="w-full h-full relative" />
+      <div ref={mapContainer} className="w-full h-full relative">
+        {areaWarning && (
+          <div className="absolute top-16 left-1/2 transform -translate-x-1/2 bg-red-500 text-white px-4 py-2 rounded-lg shadow-lg text-sm">
+            {areaWarning}
+          </div>
+        )}
+      </div>
       <style jsx global>{`
         .instructions {
           position: absolute;
