@@ -3,17 +3,12 @@
 import { useState } from 'react'
 import TowerForm from './TowerForm'
 import { useAnalysis } from '../context/AnalysisContext'
+import type { AnalysisResult } from '../types'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
   type?: 'form' | 'text' | 'options'
-}
-
-interface Option {
-  icon: string
-  text: string
-  action: () => void
 }
 
 export default function ChatSection() {
@@ -30,7 +25,6 @@ export default function ChatSection() {
       type: 'options'
     }
   ])
-  const [input, setInput] = useState('')
 
   const handleOptionClick = (option: number) => {
     switch (option) {
@@ -97,8 +91,11 @@ export default function ChatSection() {
     }
   }
 
-  const handleAnalysis = (data: any) => {
-    setAnalysisData(data) // Update the context to trigger chart updates
+  const handleAnalysis = (data: AnalysisResult) => {
+    setAnalysisData(data)
+    const signalStrength = Number(data.towerData.signalStrength)
+    const signalQuality = signalStrength > -85 ? 'Good' : 'Poor'
+
     setMessages(prev => [
       ...prev,
       {
@@ -109,7 +106,7 @@ export default function ChatSection() {
       {
         role: 'assistant',
         content: `📊 Key Findings:\n
-• Signal Strength: ${data.towerData.signalStrength}dBm (${data.towerData.signalStrength > -85 ? 'Good' : 'Poor'})
+• Signal Strength: ${data.towerData.signalStrength}dBm (${signalQuality})
 • Estimated Speed: ${data.speedPrediction} Mbps
 • Tower Distance: ${(Number(data.towerData.range)/1000).toFixed(1)}km\n
 💡 Recommendations:\n${data.suggestions.join('\n')}`,
