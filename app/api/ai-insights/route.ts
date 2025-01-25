@@ -1,4 +1,10 @@
 import { NextResponse } from 'next/server';
+import OpenAI from 'openai';
+
+// Initialize OpenAI client
+const openai = new OpenAI({
+  apiKey: process.env.OPEN_AI_API_KEY
+});
 
 function generatePrompt(question: string, data: any): string {
   let context = '';
@@ -11,6 +17,11 @@ Analysis of a single cell tower:
 - Range: ${data.towerData.range}m
 - Estimated Speed: ${data.speedPrediction}Mbps
 - Location: ${data.towerData.latitude}, ${data.towerData.longitude}
+
+Signal Quality Assessment:
+- Good signal: > -85 dBm
+- Fair signal: -95 to -85 dBm
+- Poor signal: < -95 dBm
     `;
   } else if (data.cells) {
     // Area analysis
@@ -28,6 +39,18 @@ Network Types Distribution:
 ${Object.entries(data.networkTypes)
   .map(([type, count]) => `- ${type}: ${count} towers`)
   .join('\n')}
+
+Coverage Assessment Guidelines:
+- Good density: > 2 cells/km²
+- Fair density: 1-2 cells/km²
+- Poor density: < 1 cell/km²
+
+Technology Capabilities:
+- 5G (NR): Highest speed and lowest latency
+- LTE: High speed, good latency
+- UMTS: Moderate speed
+- GSM: Basic coverage
+- CDMA: Legacy technology
     `;
   }
 
@@ -35,7 +58,7 @@ ${Object.entries(data.networkTypes)
 
 ${context}
 
-Please provide a detailed, professional analysis focusing on the specific question. Include technical insights and practical recommendations where relevant.`;
+Please provide a detailed, professional analysis focusing on the specific question. Include technical insights and practical recommendations where relevant. Keep your response concise but informative, using bullet points where appropriate.`;
 }
 
 export async function POST(request: Request) {
@@ -52,26 +75,30 @@ export async function POST(request: Request) {
 
     const prompt = generatePrompt(question, data);
 
-    // Make API call to your preferred AI model (e.g., OpenAI, Anthropic, etc.)
-    // For now, let's return a mock response
-    const mockInsights = `Based on the provided network data, here's my analysis:
+    // Call OpenAI API
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [
+        {
+          role: "system",
+          content: "You are a mobile network expert specializing in signal analysis, coverage optimization, and network performance. Format your response in Markdown with appropriate headers, bullet points, and emphasis where needed."
+        },
+        {
+          role: "user",
+          content: prompt
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 500
+    });
 
-${data.towerData ? 
-  `The cell tower shows ${Number(data.towerData.signalStrength) > -85 ? 'good' : 'suboptimal'} signal strength at ${data.towerData.signalStrength}dBm. This indicates ${Number(data.towerData.signalStrength) > -85 ? 'reliable' : 'potentially unstable'} connectivity.` :
-  `The area shows ${data.cells.length > 5 ? 'good' : 'limited'} coverage with ${data.cells.length} towers. The cell density of ${data.coverageMetrics.cellDensity.toFixed(2)} cells/km² suggests ${data.coverageMetrics.cellDensity > 2 ? 'robust' : 'potentially sparse'} network coverage.`}
+    const insights = completion.choices[0]?.message?.content || '**No insights available**';
 
-Recommendations:
-1. ${data.towerData ? 
-    'Monitor signal strength variations throughout the day' : 
-    'Consider tower placement optimization in areas with lower density'}
-2. ${data.towerData ?
-    'Ensure line of sight to the tower when possible' :
-    'Evaluate the distribution of different network technologies (GSM/UMTS/LTE)'}
-3. ${data.towerData ?
-    'Consider external antenna if signal strength is consistently low' :
-    'Plan for capacity expansion in high-traffic areas'}`;
-
-    return NextResponse.json({ insights: mockInsights });
+    // Ensure the insights are treated as Markdown
+    return NextResponse.json({ 
+      insights,
+      format: 'markdown'
+    });
   } catch (error) {
     console.error('Error generating insights:', error);
     return NextResponse.json(
