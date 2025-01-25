@@ -1,0 +1,3 @@
+mkdir lib 
+mkdir app/components 
+npm install chart.js react-chartjs-2 
