@@ -4,11 +4,12 @@ import { useState } from 'react'
 import TowerForm from './TowerForm'
 import { useAnalysis } from '../context/AnalysisContext'
 import type { AnalysisResult } from '../types'
+import AreaAnalysis from './AreaAnalysis'
 
 interface Message {
   role: 'user' | 'assistant'
   content: string
-  type?: 'form' | 'text' | 'options'
+  type?: 'form' | 'text' | 'options' | 'area-analysis'
 }
 
 export default function ChatSection() {
@@ -53,18 +54,18 @@ export default function ChatSection() {
           ...prev,
           {
             role: 'user',
-            content: 'Generate performance report',
+            content: 'I want to analyze cells in an area',
             type: 'text'
           },
           {
             role: 'assistant',
-            content: 'To generate a performance report, I first need to analyze your network. Please provide the network details:',
+            content: 'Select an area on the map to analyze cell coverage:',
             type: 'text'
           },
           {
             role: 'assistant',
-            content: 'Network Analysis Form',
-            type: 'form'
+            content: 'Area Analysis',
+            type: 'area-analysis'
           }
         ])
         break
@@ -73,18 +74,18 @@ export default function ChatSection() {
           ...prev,
           {
             role: 'user',
-            content: 'Get optimization tips',
+            content: 'Get cell statistics',
             type: 'text'
           },
           {
             role: 'assistant',
-            content: 'I\'ll help you optimize your network. First, let me analyze your current setup:',
+            content: 'I\'ll help you get cell statistics. Select an area:',
             type: 'text'
           },
           {
             role: 'assistant',
-            content: 'Network Analysis Form',
-            type: 'form'
+            content: 'Area Analysis',
+            type: 'area-analysis'
           }
         ])
         break
@@ -115,6 +116,31 @@ export default function ChatSection() {
     ])
   }
 
+  const handleAreaAnalysis = async (data: any) => {
+    setAnalysisData(data)
+    setMessages(prev => [
+      ...prev,
+      {
+        role: 'assistant',
+        content: '🔍 Area Analysis Complete!',
+        type: 'text'
+      },
+      {
+        role: 'assistant',
+        content: `📊 Coverage Analysis:\n
+• Total Cells: ${data.cells.length}
+• Area Size: ${data.coverageMetrics.areaSizeKm} km²
+• Cell Density: ${data.coverageMetrics.cellDensity} cells/km²
+• Average Range: ${data.coverageMetrics.averageRangeKm.toFixed(2)} km\n
+Network Types Distribution:
+${Object.entries(data.networkTypes)
+  .map(([type, count]) => `• ${type}: ${count} cells`)
+  .join('\n')}`,
+        type: 'text'
+      }
+    ])
+  }
+
   const renderOptions = () => (
     <div className="flex flex-col gap-3 w-full">
       <button
@@ -123,8 +149,8 @@ export default function ChatSection() {
       >
         <span className="text-2xl">📡</span>
         <div>
-          <h3 className="font-medium text-slate-800">Analyze Mobile Network</h3>
-          <p className="text-sm text-slate-600">Check signal strength and performance</p>
+          <h3 className="font-medium text-slate-800">Single Tower Analysis</h3>
+          <p className="text-sm text-slate-600">Analyze a specific cell tower</p>
         </div>
       </button>
       
@@ -132,10 +158,10 @@ export default function ChatSection() {
         onClick={() => handleOptionClick(2)}
         className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 transition-colors text-left"
       >
-        <span className="text-2xl">📊</span>
+        <span className="text-2xl">🗺️</span>
         <div>
-          <h3 className="font-medium text-slate-800">Generate Performance Report</h3>
-          <p className="text-sm text-slate-600">Get detailed network statistics</p>
+          <h3 className="font-medium text-slate-800">Area Coverage Analysis</h3>
+          <p className="text-sm text-slate-600">Analyze cell towers in a specific area</p>
         </div>
       </button>
       
@@ -143,10 +169,10 @@ export default function ChatSection() {
         onClick={() => handleOptionClick(3)}
         className="flex items-center gap-3 p-4 bg-white border border-gray-200 rounded-lg hover:bg-indigo-50 hover:border-indigo-200 transition-colors text-left"
       >
-        <span className="text-2xl">💡</span>
+        <span className="text-2xl">📊</span>
         <div>
-          <h3 className="font-medium text-slate-800">Get Optimization Tips</h3>
-          <p className="text-sm text-slate-600">Improve your network performance</p>
+          <h3 className="font-medium text-slate-800">Coverage Statistics</h3>
+          <p className="text-sm text-slate-600">Get detailed coverage metrics for an area</p>
         </div>
       </button>
     </div>
@@ -170,20 +196,16 @@ export default function ChatSection() {
                 ? 'ml-auto bg-indigo-600 text-white' 
                 : 'bg-white shadow-md border border-gray-100 text-slate-700'
             } rounded-lg p-4 max-w-[80%] ${message.type === 'options' ? 'w-full max-w-full' : ''} ${
-              message.type === 'form' ? 'w-full' : ''
+              message.type === 'form' || message.type === 'area-analysis' ? 'w-full' : ''
             } whitespace-pre-wrap`}
           >
             {message.type === 'form' ? (
               <div className="bg-white rounded-lg">
-                <TowerForm 
-                  onAnalysis={handleAnalysis} 
-                  defaultValues={{
-                    mcc: '310',
-                    mnc: '410',
-                    cellId: '52643',
-                    lac: '8532'
-                  }}
-                />
+                <TowerForm onAnalysis={handleAnalysis} />
+              </div>
+            ) : message.type === 'area-analysis' ? (
+              <div className="bg-white rounded-lg">
+                <AreaAnalysis onAnalysisComplete={handleAreaAnalysis} />
               </div>
             ) : message.type === 'options' ? (
               renderOptions()
