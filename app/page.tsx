@@ -1,4 +1,3 @@
-import Image from "next/image";
 import { AnalysisProvider } from './context/AnalysisContext'
 import ChatSection from './components/ChatSection'
 import CanvasSection from './components/CanvasSection'
