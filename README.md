@@ -6,7 +6,7 @@ A powerful web application for analyzing mobile network performance and coverage
 
 ## 🎥 Demo
 
-![Wave Tracker Demo](public/demo-web-tracker.gif)
+![Wave Tracker Demo](![public/demo-web-tracker.gif](https://github.com/camilocbarrera/wave-tracker/blob/main/assets/demo-web-tracker.gif))
 
 ## 🚀 Features
 
