@@ -3,6 +3,7 @@ import { GeistSans } from 'geist/font'
 import "./globals.css";
 import Header from './components/Header';
 import Banner from './components/Banner';
+import Onboarding from './components/Onboarding';
 
 export const metadata: Metadata = {
   title: "Wave Tracker",
@@ -17,9 +18,10 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={GeistSans.className}>
+        <Onboarding />
         <Banner />
         <Header />
-        <main className="min-h-screen bg-gray-50">
+        <main className="min-h-screen bg-gray-50 pt-[136px]">
           {children}
         </main>
       </body>
