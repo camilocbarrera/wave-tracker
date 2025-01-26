@@ -15,10 +15,10 @@ interface TowerFormProps {
 
 export default function TowerForm({ onAnalysis, defaultValues }: TowerFormProps) {
   const [formData, setFormData] = useState({
-    mcc: defaultValues?.mcc || '',
-    mnc: defaultValues?.mnc || '',
-    cellId: defaultValues?.cellId || '',
-    lac: defaultValues?.lac || ''
+    mcc: defaultValues?.mcc || '260',
+    mnc: defaultValues?.mnc || '2',
+    cellId: defaultValues?.cellId || '22613',
+    lac: defaultValues?.lac || '45080'
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
