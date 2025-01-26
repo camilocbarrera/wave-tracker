@@ -3,7 +3,7 @@ import Image from 'next/image';
 
 export default function Banner() {
   return (
-    <div className="bg-yellow-50 border-b border-yellow-100 p-3">
+    <div className="fixed top-0 left-0 right-0 z-50 bg-yellow-50 border-b border-yellow-100 p-3">
       <div className="container mx-auto flex items-center justify-center gap-4 flex-wrap">
         <Image 
           src="/lablab_ai_logo.png" 
