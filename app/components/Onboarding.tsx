@@ -10,6 +10,11 @@ const steps = [
     icon: "🎯"
   },
   {
+    title: "Quick Demo",
+    description: "Watch how easy it is to analyze network performance and get AI-powered insights.",
+    type: "demo"
+  },
+  {
     title: "Choose Your Analysis",
     description: "Select between single tower analysis or area coverage analysis.",
     icon: "📊"
@@ -53,6 +58,8 @@ export default function Onboarding() {
 
   if (!isVisible) return null;
 
+  const currentStepData = steps[currentStep];
+
   return (
     <div className="fixed inset-0 bg-black/50 z-[60] flex items-center justify-center p-4">
       <AnimatePresence mode="wait">
@@ -61,15 +68,25 @@ export default function Onboarding() {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className="bg-white rounded-xl shadow-xl max-w-md w-full p-6"
+          className="bg-white rounded-xl shadow-xl max-w-2xl w-full p-6"
         >
           <div className="text-center mb-6">
-            <span className="text-4xl mb-4 block">{steps[currentStep].icon}</span>
+            {currentStepData.type === 'demo' ? (
+              <div className="relative w-full aspect-video rounded-lg overflow-hidden mb-4 bg-gray-100">
+                <img
+                  src="/assets/demo-web-tracker.gif"
+                  alt="Wave Tracker Demo"
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            ) : (
+              <span className="text-4xl mb-4 block">{currentStepData.icon}</span>
+            )}
             <h2 className="text-xl font-bold text-gray-900 mb-2">
-              {steps[currentStep].title}
+              {currentStepData.title}
             </h2>
             <p className="text-gray-600">
-              {steps[currentStep].description}
+              {currentStepData.description}
             </p>
           </div>
 
