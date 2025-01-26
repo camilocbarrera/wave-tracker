@@ -4,6 +4,10 @@ A powerful web application for analyzing mobile network performance and coverage
 
 ![Wave Tracker Banner](public/lablab_ai_logo.png)
 
+## 🎥 Demo
+
+![Wave Tracker Demo](public/demo-web-tracker.gif)
+
 ## 🚀 Features
 
 - **Single Tower Analysis**: Analyze individual cell tower performance using MCC, MNC, Cell ID, and LAC codes
